@@ -1,0 +1,68 @@
+name: Smart QR System CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: test_qr_db
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run Django Security Check & System Verification
+        env:
+          SECRET_KEY: 'ci-pipeline-testing-secret-key'
+          DEBUG: 'False'
+          DATABASE_URL: 'postgres://test_user:test_password@localhost:5432/test_qr_db'
+        run: |
+          python manage.py check
+          python manage.py check --deploy || true
+
+      - name: Run Migrations & Test Suite
+        env:
+          SECRET_KEY: 'ci-pipeline-testing-secret-key'
+          DEBUG: 'False'
+          DATABASE_URL: 'postgres://test_user:test_password@localhost:5432/test_qr_db'
+        run: |
+          python manage.py makemigrations accounts departments subjects faculty students attendance notifications dashboard reports api
+          python manage.py migrate
+          python manage.py test
+
+      - name: Collect Static Files Verification
+        env:
+          SECRET_KEY: 'ci-pipeline-testing-secret-key'
+          DEBUG: 'False'
+          DATABASE_URL: 'sqlite:///ci_temp.db'
+        run: |
+          python manage.py collectstatic --noinput

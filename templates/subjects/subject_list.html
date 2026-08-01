@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+
+{% block title %}Subject Management - Smart QR System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-bold m-0">Subjects Catalog</h3>
+        <p class="text-secondary small m-0">Manage course subjects, credits, and semester assignments</p>
+    </div>
+    <button class="btn btn-primary rounded-3 fw-semibold shadow-sm" data-bs-toggle="modal" data-bs-target="#addSubjectModal">
+        <i class="bi bi-plus-lg me-2"></i>Add Subject
+    </button>
+</div>
+
+<div class="card card-custom p-4">
+    <div class="table-responsive">
+        <table class="table table-custom align-middle">
+            <thead>
+                <tr>
+                    <th>Subject Code</th>
+                    <th>Subject Name</th>
+                    <th>Type</th>
+                    <th>Credits</th>
+                    <th>Department</th>
+                    <th>Semester</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in subjects %}
+                    <tr>
+                        <td><b>{{ s.code }}</b></td>
+                        <td>{{ s.name }}</td>
+                        <td><span class="badge bg-body-tertiary text-secondary">{{ s.get_subject_type_display }}</span></td>
+                        <td>{{ s.credits }}</td>
+                        <td>{{ s.department.code }}</td>
+                        <td>{{ s.semester.name }}</td>
+                        <td>
+                            <a href="{% url 'subjects:delete_subject' s.id %}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete subject?');">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="7" class="text-center text-secondary py-4">No subjects registered yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Add Subject Modal -->
+<div class="modal fade" id="addSubjectModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content card-custom">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">Add New Subject</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Subject Code *</label>
+                        <input type="text" name="code" class="form-control" required placeholder="CS501">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Subject Name *</label>
+                        <input type="text" name="name" class="form-control" required placeholder="Database Management Systems">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Subject Type</label>
+                        <select name="subject_type" class="form-select">
+                            <option value="THEORY">Theory</option>
+                            <option value="LAB">Practical / Lab</option>
+                            <option value="PROJECT">Project</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Credits</label>
+                        <input type="number" name="credits" class="form-control" value="3">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Department *</label>
+                        <select name="department" class="form-select" required>
+                            {% for d in departments %}<option value="{{ d.id }}">{{ d.name }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Course *</label>
+                        <select name="course" class="form-select" required>
+                            {% for c in courses %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Semester *</label>
+                        <select name="semester" class="form-select" required>
+                            {% for sem in semesters %}<option value="{{ sem.id }}">{{ sem.name }}</option>{% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary fw-semibold">Save Subject</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

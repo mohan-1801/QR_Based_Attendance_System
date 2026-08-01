@@ -1,0 +1,26 @@
+# Render Blueprint Deployment Spec for Smart QR Attendance System
+services:
+  - type: web
+    name: smart-qr-attendance
+    env: python
+    buildCommand: "pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate && python seed_data.py"
+    startCommand: "gunicorn smart_qr_attendance.wsgi:application --config gunicorn.conf.py"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: DEBUG
+        value: "False"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ALLOWED_HOSTS
+        value: ".onrender.com,localhost,127.0.0.1"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: smart-qr-db
+          property: connectionString
+
+databases:
+  - name: smart-qr-db
+    databaseName: smart_qr_db
+    user: qr_user
+    plan: free

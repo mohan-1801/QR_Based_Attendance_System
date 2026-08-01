@@ -1,0 +1,115 @@
+<nav id="sidebar">
+    <div class="sidebar-header d-flex align-items-center gap-3">
+        <div class="rounded-3 bg-primary text-white p-2 d-flex align-items-center justify-content-center" style="width: 42px; height: 42px;">
+            <i class="bi bi-qr-code-scan fs-4"></i>
+        </div>
+        <div>
+            <h6 class="fw-bold m-0 text-white">Smart QR System</h6>
+            <span class="badge bg-primary-subtle text-primary extra-small" style="font-size: 0.7rem;">Production V1.0</span>
+        </div>
+    </div>
+
+    <ul class="sidebar-menu">
+        <li class="menu-header">Main Menu</li>
+        <li>
+            <a href="{% url 'dashboard:dashboard' %}" class="{% if request.resolver_match.app_name == 'dashboard' %}active{% endif %}">
+                <i class="bi bi-speedometer2"></i>
+                <span>Dashboard</span>
+            </a>
+        </li>
+
+        {% if user.is_admin %}
+            <li class="menu-header">Administration</li>
+            <li>
+                <a href="{% url 'faculty:faculty_list' %}" class="{% if request.resolver_match.app_name == 'faculty' and request.resolver_match.url_name == 'faculty_list' %}active{% endif %}">
+                    <i class="bi bi-person-badge"></i>
+                    <span>Faculty Management</span>
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'students:student_list' %}" class="{% if request.resolver_match.app_name == 'students' and request.resolver_match.url_name == 'student_list' %}active{% endif %}">
+                    <i class="bi bi-people"></i>
+                    <span>Student Management</span>
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'departments:department_list' %}" class="{% if request.resolver_match.app_name == 'departments' %}active{% endif %}">
+                    <i class="bi bi-building"></i>
+                    <span>Departments & Courses</span>
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'subjects:subject_list' %}" class="{% if request.resolver_match.app_name == 'subjects' and request.resolver_match.url_name == 'subject_list' %}active{% endif %}">
+                    <i class="bi bi-journal-bookmark"></i>
+                    <span>Subjects Management</span>
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'subjects:structure' %}" class="{% if request.resolver_match.url_name == 'structure' %}active{% endif %}">
+                    <i class="bi bi-diagram-3"></i>
+                    <span>Academic Structure</span>
+                </a>
+            </li>
+        {% endif %}
+
+        {% if user.is_faculty or user.is_admin %}
+            <li class="menu-header">Faculty Corner</li>
+            <li>
+                <a href="{% url 'faculty:generate_qr' %}" class="{% if request.resolver_match.url_name == 'generate_qr' or request.resolver_match.url_name == 'live_session' %}active{% endif %}">
+                    <i class="bi bi-qr-code"></i>
+                    <span>Generate Attendance QR</span>
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'faculty:manual_attendance' %}" class="{% if request.resolver_match.url_name == 'manual_attendance' %}active{% endif %}">
+                    <i class="bi bi-pencil-square"></i>
+                    <span>Manual Correction</span>
+                </a>
+            </li>
+        {% endif %}
+
+        {% if user.is_student or user.is_admin %}
+            <li class="menu-header">Student Corner</li>
+            <li>
+                <a href="{% url 'students:scan_qr' %}" class="{% if request.resolver_match.url_name == 'scan_qr' %}active{% endif %}">
+                    <i class="bi bi-camera"></i>
+                    <span>Scan QR Attendance</span>
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'students:history' %}" class="{% if request.resolver_match.url_name == 'history' %}active{% endif %}">
+                    <i class="bi bi-clock-history"></i>
+                    <span>My Attendance History</span>
+                </a>
+            </li>
+        {% endif %}
+
+        <li class="menu-header">Analytics & Reports</li>
+        <li>
+            <a href="{% url 'reports:index' %}" class="{% if request.resolver_match.app_name == 'reports' %}active{% endif %}">
+                <i class="bi bi-bar-chart-line"></i>
+                <span>Reports & Analytics</span>
+            </a>
+        </li>
+        <li>
+            <a href="{% url 'notifications:notification_list' %}" class="{% if request.resolver_match.app_name == 'notifications' %}active{% endif %}">
+                <i class="bi bi-bell"></i>
+                <span>Notifications</span>
+            </a>
+        </li>
+
+        <li class="menu-header">Account</li>
+        <li>
+            <a href="{% url 'accounts:profile' %}" class="{% if request.resolver_match.url_name == 'profile' %}active{% endif %}">
+                <i class="bi bi-person-gear"></i>
+                <span>Account Profile</span>
+            </a>
+        </li>
+        <li>
+            <a href="{% url 'accounts:logout' %}" class="text-danger">
+                <i class="bi bi-box-arrow-right"></i>
+                <span>Logout</span>
+            </a>
+        </li>
+    </ul>
+</nav>

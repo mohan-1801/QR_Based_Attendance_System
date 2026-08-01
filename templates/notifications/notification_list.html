@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block title %}Notifications - Smart QR System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-bold m-0">Notifications Center</h3>
+        <p class="text-secondary small m-0">System alerts, low attendance warnings & class confirmations</p>
+    </div>
+    <a href="{% url 'notifications:mark_all_read' %}" class="btn btn-outline-secondary rounded-3 fw-semibold">
+        <i class="bi bi-check-all me-2"></i>Mark All Read
+    </a>
+</div>
+
+<div class="card card-custom p-4">
+    <div class="list-group list-group-flush">
+        {% for n in notifications %}
+            <div class="list-group-item bg-transparent py-3 d-flex justify-content-between align-items-start border-bottom">
+                <div class="d-flex gap-3">
+                    <div class="p-2 rounded-circle bg-{% if n.notification_type == 'WARNING' %}warning{% elif n.notification_type == 'SUCCESS' %}success{% else %}primary{% endif %}-subtle text-{% if n.notification_type == 'WARNING' %}warning{% elif n.notification_type == 'SUCCESS' %}success{% else %}primary{% endif %} mt-1">
+                        <i class="bi bi-{% if n.notification_type == 'WARNING' %}exclamation-triangle{% elif n.notification_type == 'SUCCESS' %}check-circle{% else %}info-circle{% endif %} fs-5"></i>
+                    </div>
+                    <div>
+                        <div class="fw-bold {% if not n.is_read %}text-primary{% endif %}">{{ n.title }}</div>
+                        <div class="text-secondary small mt-1">{{ n.message }}</div>
+                        <div class="extra-small text-secondary mt-2">{{ n.created_at|date:"Y-m-d H:i:s" }}</div>
+                    </div>
+                </div>
+                {% if not n.is_read %}
+                    <a href="{% url 'notifications:mark_read' n.id %}" class="btn btn-sm btn-light">Mark Read</a>
+                {% endif %}
+            </div>
+        {% empty %}
+            <div class="text-center py-5 text-secondary">No notifications found.</div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

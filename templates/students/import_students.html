@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block title %}Import Students via Excel - Smart QR System{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-12 col-md-8 col-lg-6">
+        <div class="card card-custom p-4 p-md-5">
+            <h4 class="fw-bold text-primary mb-3"><i class="bi bi-file-earmark-spreadsheet me-2"></i>Bulk Import Students</h4>
+            <p class="text-secondary small mb-4">Upload an Excel file (.xlsx) containing student records. Default password assigned will be <code>student123</code>.</p>
+
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="mb-4">
+                    <label class="form-label fw-semibold">Select Excel File (.xlsx)</label>
+                    <input type="file" name="excel_file" class="form-control form-control-lg" accept=".xlsx, .xls" required>
+                </div>
+
+                <div class="alert alert-info small mb-4">
+                    <div class="fw-bold mb-1"><i class="bi bi-info-circle me-1"></i>Expected Excel Columns Order:</div>
+                    <ol class="m-0 ps-3">
+                        <li>Username</li>
+                        <li>First Name</li>
+                        <li>Last Name</li>
+                        <li>Email Address</li>
+                        <li>Roll Number</li>
+                        <li>Enrollment Number</li>
+                    </ol>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2">
+                    <a href="{% url 'students:student_list' %}" class="btn btn-outline-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-primary fw-semibold px-4"><i class="bi bi-upload me-2"></i>Start Import</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

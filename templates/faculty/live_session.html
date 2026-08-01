@@ -1,0 +1,148 @@
+{% extends 'base.html' %}
+
+{% block title %}Live Attendance Session - Smart QR System{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- QR Code Display Box -->
+    <div class="col-12 col-lg-5">
+        <div class="card card-custom p-4 text-center">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <span class="badge bg-primary-subtle text-primary px-3 py-2 rounded-pill fw-bold">LIVE SESSION</span>
+                <div id="session-status" class="badge bg-success px-3 py-2 rounded-pill">ACTIVE</div>
+            </div>
+
+            <h4 class="fw-bold mb-1">{{ qr_session.subject.name }}</h4>
+            <p class="text-secondary small mb-3">
+                Subject Code: <b>{{ qr_session.subject.code }}</b> | Section: <b>{{ qr_session.section.name }}</b>
+            </p>
+
+            <div class="qr-pulse-box d-inline-block mx-auto mb-3">
+                {% if qr_session.qr_image %}
+                    <img src="{{ qr_session.qr_image.url }}" alt="QR Code" id="qr-image" class="img-fluid rounded-3" style="max-width: 280px;">
+                {% endif %}
+            </div>
+
+            <!-- Expiry Timer -->
+            <div class="mb-3">
+                <div class="text-secondary extra-small text-uppercase fw-bold">Time Remaining</div>
+                <div id="countdown-timer" class="countdown-badge text-primary">00:00</div>
+            </div>
+
+            <!-- Manual Copy Token for Quick Testing -->
+            <div class="bg-body-tertiary p-2 rounded-3 small text-secondary mb-3">
+                <div class="extra-small fw-bold">Token Code (For manual test entry):</div>
+                <code class="text-primary user-select-all">{{ qr_session.token }}</code>
+            </div>
+
+            <div class="d-grid gap-2">
+                <a href="{% url 'faculty:stop_session' qr_session.session_id %}" class="btn btn-outline-danger fw-semibold" onclick="return confirm('Stop live attendance session?');">
+                    <i class="bi bi-stop-circle me-2"></i>Stop Session
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Real-time Attendance Feed -->
+    <div class="col-12 col-lg-7">
+        <div class="card card-custom p-4 h-100">
+            <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center mb-3 gap-2">
+                <div>
+                    <h5 class="fw-bold m-0">Live Scanned Attendance</h5>
+                    <span class="text-secondary small">Auto-refreshing live feed</span>
+                </div>
+                <div class="d-flex gap-2">
+                    <span class="badge bg-success-subtle text-success fs-6 px-3 py-2 rounded-pill">
+                        Present: <span id="count-present">{{ records.count }}</span>
+                    </span>
+                    <a href="{% url 'faculty:export_session_pdf' qr_session.session_id %}" class="btn btn-sm btn-outline-danger">
+                        <i class="bi bi-file-earmark-pdf"></i> PDF
+                    </a>
+                    <a href="{% url 'faculty:export_session_excel' qr_session.session_id %}" class="btn btn-sm btn-outline-success">
+                        <i class="bi bi-file-earmark-excel"></i> Excel
+                    </a>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-custom align-middle">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Roll Number</th>
+                            <th>Student Name</th>
+                            <th>Marked Time</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="attendance-feed-body">
+                        {% for r in records %}
+                            <tr>
+                                <td>{{ forloop.counter }}</td>
+                                <td><b>{{ r.student.roll_number }}</b></td>
+                                <td>{{ r.student.user.get_full_name_or_username }}</td>
+                                <td class="small">{{ r.marked_at|date:"H:i:s" }}</td>
+                                <td><span class="badge bg-success-subtle text-success">PRESENT</span></td>
+                            </tr>
+                        {% empty %}
+                            <tr id="empty-row"><td colspan="5" class="text-center text-secondary py-4">Waiting for students to scan QR code...</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const expiresAt = new Date("{{ qr_session.expires_at|date:'c' }}").getTime();
+const timerElem = document.getElementById('countdown-timer');
+const statusElem = document.getElementById('session-status');
+
+// Countdown timer interval
+const timerInterval = setInterval(() => {
+    const now = new Date().getTime();
+    const distance = expiresAt - now;
+
+    if (distance <= 0) {
+        clearInterval(timerInterval);
+        timerElem.innerHTML = "EXPIRED";
+        timerElem.className = "countdown-badge text-danger";
+        statusElem.innerHTML = "EXPIRED";
+        statusElem.className = "badge bg-danger px-3 py-2 rounded-pill";
+        return;
+    }
+
+    const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+    timerElem.innerHTML = (minutes < 10 ? "0" : "") + minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
+}, 1000);
+
+// Live Polling Feed every 3 seconds
+setInterval(() => {
+    fetch("{% url 'faculty:live_data_api' qr_session.session_id %}")
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById('count-present').innerText = data.present_count;
+            const tbody = document.getElementById('attendance-feed-body');
+            
+            if (data.records.length > 0) {
+                let html = '';
+                data.records.forEach((r, idx) => {
+                    html += `<tr>
+                        <td>${idx + 1}</td>
+                        <td><b>${r.roll_number}</b></td>
+                        <td>${r.name}</td>
+                        <td class="small">${r.marked_at}</td>
+                        <td><span class="badge bg-success-subtle text-success">${r.status}</span></td>
+                    </tr>`;
+                });
+                tbody.innerHTML = html;
+            }
+        });
+}, 3000);
+</script>
+{% endblock %}

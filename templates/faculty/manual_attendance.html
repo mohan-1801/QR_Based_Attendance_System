@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+
+{% block title %}Manual Attendance Correction - Smart QR System{% endblock %}
+
+{% block content %}
+<div class="card card-custom p-4 mb-4">
+    <h4 class="fw-bold mb-3"><i class="bi bi-pencil-square me-2 text-primary"></i>Manual Attendance Correction</h4>
+    <p class="text-secondary small mb-4">Search class records by Subject, Section, and Date to manually update Present/Absent status.</p>
+
+    <form method="POST" class="row g-3">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="search">
+        <div class="col-12 col-md-4">
+            <label class="form-label fw-semibold">Subject</label>
+            <select name="subject" class="form-select" required>
+                {% for sub in subjects %}
+                    <option value="{{ sub.id }}" {% if selected_subject and selected_subject.id == sub.id %}selected{% endif %}>
+                        {{ sub.code }} - {{ sub.name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-12 col-md-3">
+            <label class="form-label fw-semibold">Section</label>
+            <select name="section" class="form-select" required>
+                {% for sec in sections %}
+                    <option value="{{ sec.id }}" {% if selected_section and selected_section.id == sec.id %}selected{% endif %}>
+                        {{ sec.name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-12 col-md-3">
+            <label class="form-label fw-semibold">Date</label>
+            <input type="date" name="date" class="form-control" value="{{ selected_date|date:'Y-m-d' }}">
+        </div>
+        <div class="col-12 col-md-2 d-flex align-items-end">
+            <button type="submit" class="btn btn-primary w-100 fw-semibold">
+                <i class="bi bi-search me-1"></i>Search
+            </button>
+        </div>
+    </form>
+</div>
+
+{% if selected_subject %}
+    <div class="card card-custom p-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="fw-bold m-0">Student Attendance Sheet: {{ selected_subject.name }} ({{ selected_section.name }})</h5>
+            <span class="badge bg-body-tertiary text-secondary">Date: {{ selected_date }}</span>
+        </div>
+
+        <form method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="save_manual">
+            <input type="hidden" name="subject_id" value="{{ selected_subject.id }}">
+            <input type="hidden" name="section_id" value="{{ selected_section.id }}">
+            <input type="hidden" name="date_val" value="{{ selected_date }}">
+
+            <div class="table-responsive mb-3">
+                <table class="table table-custom align-middle">
+                    <thead>
+                        <tr>
+                            <th>Roll No</th>
+                            <th>Student Name</th>
+                            <th>Current Status</th>
+                            <th>Update Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in records %}
+                            <tr>
+                                <td><b>{{ r.student.roll_number }}</b></td>
+                                <td>{{ r.student.user.get_full_name_or_username }}</td>
+                                <td>
+                                    <span class="badge bg-{% if r.status == 'PRESENT' %}success{% elif r.status == 'LATE' %}warning{% else %}danger{% endif %}-subtle text-{% if r.status == 'PRESENT' %}success{% elif r.status == 'LATE' %}warning{% else %}danger{% endif %}">
+                                        {{ r.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <input type="hidden" name="student_ids" value="{{ r.student.id }}">
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <input type="radio" class="btn-check" name="status_{{ r.student.id }}" id="p_{{ r.student.id }}" value="PRESENT" {% if r.status == 'PRESENT' %}checked{% endif %}>
+                                        <label class="btn btn-outline-success" for="p_{{ r.student.id }}">Present</label>
+
+                                        <input type="radio" class="btn-check" name="status_{{ r.student.id }}" id="l_{{ r.student.id }}" value="LATE" {% if r.status == 'LATE' %}checked{% endif %}>
+                                        <label class="btn btn-outline-warning" for="l_{{ r.student.id }}">Late</label>
+
+                                        <input type="radio" class="btn-check" name="status_{{ r.student.id }}" id="a_{{ r.student.id }}" value="ABSENT" {% if r.status == 'ABSENT' %}checked{% endif %}>
+                                        <label class="btn btn-outline-danger" for="a_{{ r.student.id }}">Absent</label>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr><td colspan="4" class="text-center text-secondary py-4">No records found for this selection.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% if records %}
+                <div class="d-flex justify-content-end">
+                    <button type="submit" class="btn btn-success fw-semibold px-4">
+                        <i class="bi bi-check2-circle me-2"></i>Save Manual Changes
+                    </button>
+                </div>
+            {% endif %}
+        </form>
+    </div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+
+{% block title %}User Profile - Smart QR System{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <div class="col-12 col-md-4">
+        <div class="card card-custom p-4 text-center">
+            <div class="position-relative d-inline-block mx-auto mb-3">
+                {% if user_obj.profile_picture %}
+                    <img src="{{ user_obj.profile_picture.url }}" alt="Profile" class="rounded-circle object-fit-cover shadow" style="width: 120px; height: 120px;">
+                {% else %}
+                    <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mx-auto shadow" style="width: 120px; height: 120px; font-size: 3rem;">
+                        {{ user_obj.username|slice:":1"|upper }}
+                    </div>
+                {% endif %}
+                <span class="position-absolute bottom-0 end-0 badge rounded-pill bg-success p-2">
+                    <i class="bi bi-shield-check"></i>
+                </span>
+            </div>
+            <h5 class="fw-bold m-0">{{ user_obj.get_full_name_or_username }}</h5>
+            <p class="text-secondary small mb-3">{{ user_obj.email }}</p>
+            <span class="badge bg-primary-subtle text-primary fs-6 px-3 py-2 rounded-pill d-inline-block">
+                {{ user_obj.get_role_display }}
+            </span>
+        </div>
+    </div>
+
+    <div class="col-12 col-md-8">
+        <div class="card card-custom p-4">
+            <h5 class="fw-bold mb-4">Edit Profile Details</h5>
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">First Name</label>
+                        {{ form.first_name }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Last Name</label>
+                        {{ form.last_name }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Email Address</label>
+                        {{ form.email }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Phone Number</label>
+                        {{ form.phone_number }}
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">Profile Photo</label>
+                        {{ form.profile_picture }}
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">Address</label>
+                        {{ form.address }}
+                    </div>
+                </div>
+
+                <div class="mt-4 d-flex justify-content-end gap-2">
+                    <button type="submit" class="btn btn-primary rounded-3 px-4 fw-semibold">
+                        <i class="bi bi-save me-2"></i>Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

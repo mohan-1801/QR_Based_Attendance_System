@@ -1,0 +1,82 @@
+<nav class="navbar navbar-expand-lg border-bottom px-4 py-3 sticky-top bg-body">
+    <div class="container-fluid p-0">
+        <button class="btn btn-light me-3 d-flex align-items-center" id="sidebar-toggle" title="Toggle Navigation">
+            <i class="bi bi-list fs-5"></i>
+        </button>
+
+        <span class="navbar-brand font-bold fs-5 d-none d-md-block text-primary">
+            <i class="bi bi-qr-code-scan me-2"></i>Smart Attendance System
+        </span>
+
+        <!-- Search Bar -->
+        <form class="d-none d-md-flex ms-auto me-4 position-relative" style="max-width: 320px;" action="{% url 'reports:index' %}" method="GET">
+            <input class="form-control rounded-pill ps-4 pe-5 bg-body-tertiary" type="search" name="query" placeholder="Global search..." aria-label="Search">
+            <button class="btn border-0 position-absolute end-0 top-50 translate-middle-y me-2 text-secondary" type="submit">
+                <i class="bi bi-search"></i>
+            </button>
+        </form>
+
+        <div class="d-flex align-items-center gap-3 ms-auto ms-md-0">
+            <!-- Dark Mode Toggle Button -->
+            <button class="btn btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center" id="theme-toggle-btn" style="width: 40px; height: 40px;" title="Toggle Dark/Light Mode">
+                <i class="bi bi-moon-stars-fill text-primary"></i>
+            </button>
+
+            <!-- Notifications Dropdown -->
+            <div class="dropdown">
+                <button class="btn btn-outline-secondary rounded-circle position-relative d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-bell"></i>
+                    {% if unread_notifications_count > 0 %}
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.65rem;">
+                            {{ unread_notifications_count }}
+                        </span>
+                    {% endif %}
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow-lg rounded-4 p-2" style="width: 320px;">
+                    <li class="dropdown-header d-flex justify-content-between align-items-center fw-bold border-bottom pb-2">
+                        <span>Notifications</span>
+                        <a href="{% url 'notifications:mark_all_read' %}" class="btn btn-sm btn-link p-0 text-decoration-none" style="font-size: 0.8rem;">Mark all read</a>
+                    </li>
+                    {% if recent_notifications %}
+                        {% for n in recent_notifications %}
+                            <li>
+                                <a class="dropdown-item rounded-3 py-2 px-3 my-1 border-bottom" href="{% url 'notifications:notification_list' %}">
+                                    <div class="fw-semibold text-truncate small">{{ n.title }}</div>
+                                    <div class="text-secondary text-truncate extra-small" style="font-size: 0.78rem;">{{ n.message }}</div>
+                                </a>
+                            </li>
+                        {% endfor %}
+                    {% else %}
+                        <li class="text-center py-3 text-secondary small">No unread notifications</li>
+                    {% endif %}
+                    <li class="text-center pt-2">
+                        <a href="{% url 'notifications:notification_list' %}" class="small text-decoration-none fw-semibold">View All Notifications</a>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- User Profile Dropdown -->
+            <div class="dropdown">
+                <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle gap-2" data-bs-toggle="dropdown" aria-expanded="false">
+                    {% if user.profile_picture %}
+                        <img src="{{ user.profile_picture.url }}" alt="User" width="38" height="38" class="rounded-circle object-fit-cover">
+                    {% else %}
+                        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center font-bold" style="width: 38px; height: 38px;">
+                            {{ user.username|slice:":1"|upper }}
+                        </div>
+                    {% endif %}
+                    <div class="d-none d-lg-block text-start" style="line-height: 1.2;">
+                        <div class="fw-semibold text-dark-emphasis small">{{ user.get_full_name_or_username }}</div>
+                        <div class="text-secondary extra-small" style="font-size: 0.75rem;">{{ user.get_role_display }}</div>
+                    </div>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end shadow-lg rounded-4 p-2">
+                    <li><a class="dropdown-item rounded-2" href="{% url 'accounts:profile' %}"><i class="bi bi-person me-2"></i>My Profile</a></li>
+                    <li><a class="dropdown-item rounded-2" href="{% url 'accounts:change_password' %}"><i class="bi bi-key me-2"></i>Change Password</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item rounded-2 text-danger" href="{% url 'accounts:logout' %}"><i class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</nav>

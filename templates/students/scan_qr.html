@@ -1,0 +1,127 @@
+{% extends 'base.html' %}
+
+{% block title %}Scan Attendance QR - Smart QR System{% endblock %}
+
+{% block extra_head %}
+<!-- HTML5 QR Code Scanning JS Library -->
+<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-12 col-md-8 col-lg-6">
+        <div class="card card-custom p-4 text-center">
+            <div class="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center p-3 mb-3 shadow" style="width:64px; height:64px;">
+                <i class="bi bi-camera fs-2"></i>
+            </div>
+            <h4 class="fw-bold text-primary mb-1">Scan Class Attendance QR</h4>
+            <p class="text-secondary small mb-4">Position faculty's live QR code inside the camera frame or enter manual session token below.</p>
+
+            <!-- Camera Viewport Box -->
+            <div id="reader" style="width: 100%; min-height: 280px;" class="rounded-3 overflow-hidden border mb-3 bg-dark"></div>
+
+            <div id="scan-result-box" class="alert d-none rounded-3 mb-3" role="alert"></div>
+
+            <button id="start-camera-btn" class="btn btn-primary btn-lg w-100 fw-semibold mb-3">
+                <i class="bi bi-camera-video me-2"></i>Start Camera Scanner
+            </button>
+
+            <div class="hr-lines text-secondary small mb-3"><span>OR ENTER TOKEN MANUALLY</span></div>
+
+            <!-- Manual Token Fallback -->
+            <div class="input-group mb-3">
+                <input type="text" id="manual-token-input" class="form-control form-control-lg" placeholder="Paste Token String Here...">
+                <button class="btn btn-outline-primary px-4 fw-semibold" id="submit-manual-btn" type="button">
+                    <i class="bi bi-send me-1"></i>Verify
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let html5QrcodeScanner = null;
+
+document.getElementById('start-camera-btn').addEventListener('click', function () {
+    const btn = this;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Initializing Camera...';
+
+    html5QrcodeScanner = new Html5Qrcode("reader");
+    html5QrcodeScanner.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        onScanSuccess,
+        onScanFailure
+    ).then(() => {
+        btn.innerHTML = '<i class="bi bi-camera-video-off me-2"></i>Camera Active';
+        btn.classList.replace('btn-primary', 'btn-success');
+    }).catch(err => {
+        alert("Camera permission denied or camera not found. Please use the manual token verification box below.");
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-camera-video me-2"></i>Start Camera Scanner';
+    });
+});
+
+function onScanSuccess(decodedText, decodedResult) {
+    if (html5QrcodeScanner) {
+        html5QrcodeScanner.stop();
+    }
+    submitAttendanceToken(decodedText);
+}
+
+function onScanFailure(error) {
+    // Silent scanning failure
+}
+
+document.getElementById('submit-manual-btn').addEventListener('click', function () {
+    const token = document.getElementById('manual-token-input').value.trim();
+    if (!token) {
+        alert("Please enter a valid token string.");
+        return;
+    }
+    submitAttendanceToken(token);
+});
+
+function submitAttendanceToken(qrToken) {
+    const resultBox = document.getElementById('scan-result-box');
+    resultBox.className = 'alert alert-info rounded-3 mb-3 d-block';
+    resultBox.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Validating QR attendance session...';
+
+    fetch("{% url 'students:validate_qr_api' %}", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": "{{ csrf_token }}"
+        },
+        body: JSON.stringify({
+            qr_data: qrToken,
+            device_info: navigator.userAgent
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === 'success') {
+            resultBox.className = 'alert alert-success rounded-3 mb-3 d-block';
+            resultBox.innerHTML = `
+                <div class="fw-bold fs-5 mb-1"><i class="bi bi-check-circle-fill me-2"></i>Attendance Successful!</div>
+                <div><b>Subject:</b> ${data.details.subject_name} (${data.details.subject_code})</div>
+                <div class="small">Marked at: ${data.details.marked_at}</div>
+            `;
+        } else if (data.status === 'warning') {
+            resultBox.className = 'alert alert-warning rounded-3 mb-3 d-block';
+            resultBox.innerHTML = `<i class="bi bi-exclamation-triangle-fill me-2"></i><b>Notice:</b> ${data.message}`;
+        } else {
+            resultBox.className = 'alert alert-danger rounded-3 mb-3 d-block';
+            resultBox.innerHTML = `<i class="bi bi-x-circle-fill me-2"></i><b>Failed:</b> ${data.message}`;
+        }
+    })
+    .catch(err => {
+        resultBox.className = 'alert alert-danger rounded-3 mb-3 d-block';
+        resultBox.innerHTML = 'Network error during validation. Please try again.';
+    });
+}
+</script>
+{% endblock %}

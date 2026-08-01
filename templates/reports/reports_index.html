@@ -1,0 +1,168 @@
+{% extends 'base.html' %}
+
+{% block title %}Reports & Analytics - Smart QR System{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+    <div>
+        <h3 class="fw-bold m-0">Reports & Analytics</h3>
+        <p class="text-secondary small m-0">Generate daily, weekly, monthly & semester attendance reports with custom filters</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'reports:export_pdf' %}?{{ request.GET.urlencode }}" class="btn btn-outline-danger rounded-3 fw-semibold">
+            <i class="bi bi-file-earmark-pdf me-2"></i>Export PDF
+        </a>
+        <a href="{% url 'reports:export_excel' %}?{{ request.GET.urlencode }}" class="btn btn-outline-success rounded-3 fw-semibold">
+            <i class="bi bi-file-earmark-excel me-2"></i>Export Excel
+        </a>
+    </div>
+</div>
+
+<!-- Filters Card -->
+<div class="card card-custom p-4 mb-4">
+    <form method="GET" class="row g-3">
+        <div class="col-12 col-md-3">
+            <label class="form-label fw-semibold">Department</label>
+            <select name="department" class="form-select">
+                <option value="">All Departments</option>
+                {% for d in departments %}
+                    <option value="{{ d.id }}" {% if filters.department == d.id|stringformat:"s" %}selected{% endif %}>{{ d.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-12 col-md-3">
+            <label class="form-label fw-semibold">Subject</label>
+            <select name="subject" class="form-select">
+                <option value="">All Subjects</option>
+                {% for sub in subjects %}
+                    <option value="{{ sub.id }}" {% if filters.subject == sub.id|stringformat:"s" %}selected{% endif %}>{{ sub.code }} - {{ sub.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-12 col-md-2">
+            <label class="form-label fw-semibold">Start Date</label>
+            <input type="date" name="start_date" class="form-control" value="{{ filters.start_date }}">
+        </div>
+        <div class="col-12 col-md-2">
+            <label class="form-label fw-semibold">End Date</label>
+            <input type="date" name="end_date" class="form-control" value="{{ filters.end_date }}">
+        </div>
+        <div class="col-12 col-md-2 d-flex align-items-end">
+            <button type="submit" class="btn btn-primary w-100 fw-semibold">
+                <i class="bi bi-funnel me-1"></i>Apply Filters
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Analytics Charts -->
+<div class="row g-4 mb-4">
+    <div class="col-12 col-lg-6">
+        <div class="card card-custom p-4">
+            <h5 class="fw-bold mb-3"><i class="bi bi-bar-chart me-2 text-primary"></i>Department-wise Attendance Breakdown</h5>
+            <div style="position: relative; height: 260px;">
+                <canvas id="deptBarChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-lg-6">
+        <div class="card card-custom p-4">
+            <h5 class="fw-bold mb-3"><i class="bi bi-pie-chart me-2 text-primary"></i>Filtered Status Ratio</h5>
+            <div class="d-flex justify-content-around text-center mb-3">
+                <div><div class="fw-bold fs-4 text-success">{{ present_count }}</div><div class="small text-secondary">Present</div></div>
+                <div><div class="fw-bold fs-4 text-warning">{{ late_count }}</div><div class="small text-secondary">Late</div></div>
+                <div><div class="fw-bold fs-4 text-danger">{{ absent_count }}</div><div class="small text-secondary">Absent</div></div>
+                <div><div class="fw-bold fs-4 text-primary">{{ overall_pct }}%</div><div class="small text-secondary">Attendance Rate</div></div>
+            </div>
+            <div style="position: relative; height: 180px;" class="d-flex justify-content-center">
+                <canvas id="statusDoughnut"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filtered Table -->
+<div class="card card-custom p-4">
+    <h5 class="fw-bold mb-3">Filtered Attendance Sheet ({{ total_records }} Total)</h5>
+    <div class="table-responsive">
+        <table class="table table-custom align-middle">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Roll Number</th>
+                    <th>Student Name</th>
+                    <th>Subject</th>
+                    <th>Date & Time</th>
+                    <th>Status</th>
+                    <th>Method</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in records %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td><b>{{ r.student.roll_number }}</b></td>
+                        <td>{{ r.student.user.get_full_name_or_username }}</td>
+                        <td>{{ r.subject.code }}</td>
+                        <td class="small">{{ r.marked_at|date:"Y-m-d H:i" }}</td>
+                        <td>
+                            <span class="badge bg-{% if r.status == 'PRESENT' %}success{% elif r.status == 'LATE' %}warning{% else %}danger{% endif %}-subtle text-{% if r.status == 'PRESENT' %}success{% elif r.status == 'LATE' %}warning{% else %}danger{% endif %}">
+                                {{ r.get_status_display }}
+                            </span>
+                        </td>
+                        <td><span class="badge bg-body-tertiary text-secondary">{{ r.get_verification_method_display }}</span></td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="7" class="text-center text-secondary py-4">No records matching selected criteria.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+fetch("{% url 'reports:chart_data_api' %}")
+    .then(res => res.json())
+    .then(data => {
+        // Bar Chart
+        const barCtx = document.getElementById('deptBarChart').getContext('2d');
+        new Chart(barCtx, {
+            type: 'bar',
+            data: {
+                labels: data.bar.labels,
+                datasets: [{
+                    label: 'Present Students',
+                    data: data.bar.data,
+                    backgroundColor: '#3b82f6',
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } }
+            }
+        });
+
+        // Doughnut
+        const dCtx = document.getElementById('statusDoughnut').getContext('2d');
+        new Chart(dCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Present', 'Late', 'Absent'],
+                datasets: [{
+                    data: [{{ present_count }}, {{ late_count }}, {{ absent_count }}],
+                    backgroundColor: ['#22c55e', '#f59e0b', '#ef4444']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } }
+            }
+        });
+    });
+</script>
+{% endblock %}

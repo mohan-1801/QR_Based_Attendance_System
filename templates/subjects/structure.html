@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+
+{% block title %}Academic Structure - Smart QR System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-bold m-0">Academic Structure</h3>
+        <p class="text-secondary small m-0">Manage Academic Years, Semesters, Sections & Classrooms</p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Academic Years & Semesters -->
+    <div class="col-12 col-md-6">
+        <div class="card card-custom p-4">
+            <h5 class="fw-bold mb-3"><i class="bi bi-calendar3 me-2 text-primary"></i>Semesters</h5>
+            <div class="list-group list-group-flush mb-4">
+                {% for sem in semesters %}
+                    <div class="list-group-item bg-transparent d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="fw-bold">{{ sem.name }}</span>
+                            <span class="small text-secondary ms-2">(Number: {{ sem.number }})</span>
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="text-center py-2 text-secondary">No semesters configured.</div>
+                {% endfor %}
+            </div>
+
+            <form method="POST" class="border-top pt-3">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="add_semester">
+                <h6 class="fw-bold mb-2">Add New Semester</h6>
+                <div class="row g-2">
+                    <div class="col-7">
+                        <input type="text" name="sem_name" class="form-control" placeholder="e.g. Semester 5" required>
+                    </div>
+                    <div class="col-3">
+                        <input type="number" name="sem_number" class="form-control" placeholder="5" required>
+                    </div>
+                    <div class="col-2">
+                        <button type="submit" class="btn btn-primary w-100"><i class="bi bi-plus"></i></button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Sections & Classrooms -->
+    <div class="col-12 col-md-6">
+        <div class="card card-custom p-4 mb-4">
+            <h5 class="fw-bold mb-3"><i class="bi bi-diagram-3 me-2 text-primary"></i>Sections</h5>
+            <div class="d-flex flex-wrap gap-2 mb-4">
+                {% for sec in sections %}
+                    <span class="badge bg-primary-subtle text-primary fs-6 px-3 py-2 rounded-pill">
+                        {{ sec.name }} (Capacity: {{ sec.capacity }})
+                    </span>
+                {% empty %}
+                    <div class="text-secondary small">No sections added yet.</div>
+                {% endfor %}
+            </div>
+
+            <form method="POST" class="border-top pt-3">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="add_section">
+                <h6 class="fw-bold mb-2">Add New Section</h6>
+                <div class="row g-2">
+                    <div class="col-7">
+                        <input type="text" name="sec_name" class="form-control" placeholder="e.g. Section A" required>
+                    </div>
+                    <div class="col-3">
+                        <input type="number" name="capacity" class="form-control" value="60">
+                    </div>
+                    <div class="col-2">
+                        <button type="submit" class="btn btn-primary w-100"><i class="bi bi-plus"></i></button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="card card-custom p-4">
+            <h5 class="fw-bold mb-3"><i class="bi bi-door-open me-2 text-primary"></i>Classrooms</h5>
+            <div class="list-group list-group-flush mb-3">
+                {% for room in classrooms %}
+                    <div class="list-group-item bg-transparent d-flex justify-content-between align-items-center">
+                        <b>{{ room.room_number }}</b>
+                        <span class="small text-secondary">{{ room.building_name }} (Cap: {{ room.capacity }})</span>
+                    </div>
+                {% empty %}
+                    <div class="text-secondary small">No classrooms registered.</div>
+                {% endfor %}
+            </div>
+
+            <form method="POST" class="border-top pt-3">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="add_classroom">
+                <h6 class="fw-bold mb-2">Add Classroom</h6>
+                <div class="row g-2">
+                    <div class="col-5">
+                        <input type="text" name="room_number" class="form-control" placeholder="LH-101" required>
+                    </div>
+                    <div class="col-5">
+                        <input type="text" name="building_name" class="form-control" placeholder="Tech Block A" required>
+                    </div>
+                    <div class="col-2">
+                        <button type="submit" class="btn btn-primary w-100"><i class="bi bi-plus"></i></button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
