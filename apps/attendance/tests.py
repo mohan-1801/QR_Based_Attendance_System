@@ -15,7 +15,7 @@ User = get_user_model()
 
 class QRValidationTestCase(TestCase):
     def setUp(self):
-        self.client = Client()
+        self.client = Client(HTTP_X_FORWARDED_PROTO='https')
         self.dept = Department.objects.create(code='CSE', name='Computer Science')
         self.course = Course.objects.create(code='BTECH', name='B.Tech', department=self.dept)
         self.sem = Semester.objects.create(number=1, name='Sem 1')
